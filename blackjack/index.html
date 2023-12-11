@@ -16,27 +16,32 @@
     <div class="row mt-2 instructions">
         <div class="c ol text-center">
             <button class="btn btn-danger" id="btnNew"> Nuevo juego </button>
-            <button class="btn btn-primary" id="btnOrder"> Pedir carta </button>
-            <button class="btn btn-primary" id="btnStop"> Detener </button>
+            <button class="btn btn-primary" id="btnOrder" disabled="disabled"> Pedir carta </button>
+            <button class="btn btn-primary" id="btnStop" disabled="disabled"> Detener </button>
         </div>
     </div>
 
     <div class="row container">
         <div class="col">
             <h1> Jugador 1 - <small> 0 </small> </h1>
-            <div id="player-cards"> </div>
+            <div id="player-cards" class="divCards"> </div>
         </div>
     </div>
 
     <div class="row container mt-2">
         <div class="col">
             <h1> Computadora - <small> 0 </small> </h1>
-            <div id="computer-cards"> </div>
+            <div id="computer-cards" class="divCards"> </div>
         </div>
     </div>
 
     <script src="assets/js/underscore-min.js"></script>
     <script src="assets/js/game.js"></script>
+    <script>
+        document.querySelector('#btnNew').addEventListener('click', () => {
+            myModule.newGame();
+        })
+    </script>
 </body>
 
 </html>

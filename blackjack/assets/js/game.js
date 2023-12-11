@@ -1,136 +1,144 @@
-/**
- * 2C = Two of Clubs
- * 2D = Two of Diamonds
- * 2H = Two of Hearts
- * 2S = Two of Spades
- */
+const myModule = (() => {
+    'use strict'
 
-let deck = []
-const types = ['C', 'D', 'H', 'S']
-const specialCards = ['A', 'J', 'Q', 'K']
+    let deck = []
+    const types = ['C', 'D', 'H', 'S']
+    const specialCards = ['A', 'J', 'Q', 'K']
 
-let playerPoints = 0
-let computerPoints = 0
+    let pointsPlayers = []
 
-// Referencias del HTML
-const btnOrder = document.querySelector('#btnOrder')
-const btnStop = document.querySelector('#btnStop')
-const btnNew = document.querySelector('#btnNew')
-const pointsHTML = document.querySelectorAll('small')
-const divPlayerCards = document.querySelector('#player-cards')
-const divComputerCards = document.querySelector('#computer-cards')
+    // Referencias del HTML
+    const btnOrder = document.querySelector('#btnOrder')
+    const btnStop = document.querySelector('#btnStop')
+    // const btnNew = document.querySelector('#btnNew')
 
-// Crea un nuevo deck
-const createDeck = () => {
-    for (let i = 2; i <= 10; i++) {
-        for (const type of types) {
-            deck.push(i + type)
+    const pointsHTML = document.querySelectorAll('small')
+    const divPlayersCards = document.querySelectorAll('.divCards')
+
+    const initializeGame = (numPlayers = 2) => {
+        deck = createDeck()
+        pointsPlayers = []
+
+        for (let i = 0; i < numPlayers; i++) {
+            pointsPlayers.push(0)
         }
+
+        pointsHTML.forEach(element => element.innerText = 0);
+        divPlayersCards.forEach(element => element.innerText = '');
+
+        btnOrder.disabled = false
+        btnStop.disabled = false
     }
 
-    for (const special of specialCards) {
-        for (const type of types) {
-            deck.push(special + type)
+    // Crea un nuevo deck
+    const createDeck = () => {
+        deck = []
+
+        for (let i = 2; i <= 10; i++) {
+            for (const type of types) {
+                deck.push(i + type)
+            }
         }
+
+        for (const special of specialCards) {
+            for (const type of types) {
+                deck.push(special + type)
+            }
+        }
+
+        return _.shuffle(deck)
     }
 
-    deck = _.shuffle(deck)
+    // Función que permite tomar una carta
+    const orderCard = () => {
+        if(deck.length === 0) throw 'No hay cartas en el deck'
 
-    return deck
-}
+        return deck.pop()
+    }
 
-createDeck()
+    // Función que permite pedir una carta
+    const valueCard = (card) => {
+        const value = card.substring(0, card.length - 1)
 
-// Función que permite tomar una carta
-const orderCard = () => {
-    if(deck.length === 0) throw 'No hay cartas en el deck'
+        // El if me valida si el valor es o no un número
+        return (isNaN(value)) ?
+                (value === 'A') ? 11 : 10 
+                : Number(value)
+    }
 
-    return deck.pop()
-}
+    // El shift es de acuerdo al jugador
+    const accumulatePoints = (shift, card) => {
+        pointsPlayers[shift] += valueCard(card)
+        pointsHTML[shift].innerText = pointsPlayers[shift]
+        
+        return pointsPlayers[shift]
+    }
 
-// Función que permite pedir una carta
-const valueCard = (card) => {
-    const value = card.substring(0, card.length - 1)
-
-    // El if me valida si el valor es o no un número
-    return (isNaN(value)) ?
-            (value === 'A') ? 11 : 10 
-            : Number(value)
-}
-
-// Turno de la computafora
-const computerShift = (miniumPoints) => {
-    do {
-        const card = orderCard()
-        computerPoints += valueCard(card)
-        pointsHTML[1].innerText = computerPoints
-
+    const createCard = (card, shift) => {
         const imgCard = document.createElement('img')
         imgCard.src = `assets/cartas/${card}.png`
         imgCard.classList.add('cards')
 
-        divComputerCards.append(imgCard)
+        divPlayersCards[shift].append(imgCard)
+    }
 
-        if(miniumPoints > 21) break
-    } while (computerPoints < miniumPoints && miniumPoints <= 21);
+    const determineWinner = () => {
+        const [miniumPoints, computerPoints] = pointsPlayers
 
-    setTimeout(() => {
-        if(computerPoints === miniumPoints) {
-            alert('Nadie gana')
-        } else if(miniumPoints > 21) {
-            alert('Gana computadora')
-        } else if(computerPoints > 21) {
-            alert('Gana jugador')
-        } else alert('Gana computadora')
-    }, 100);
-}
+        setTimeout(() => {
+            if(computerPoints === miniumPoints) {
+                alert('Nadie gana')
+            } else if(miniumPoints > 21) {
+                alert('Gana computadora')
+            } else if(computerPoints > 21) {
+                alert('Gana jugador')
+            } else alert('Gana computadora')
+        }, 100);
+    }
 
-// Evento, pedir carta
-btnOrder.addEventListener('click', () => {
-    const card = orderCard()
-    playerPoints += valueCard(card)
-    pointsHTML[0].innerText = playerPoints
+    // Turno de la computafora
+    const computerShift = (miniumPoints) => {
+        let computerPoints = 0
 
-    const imgCard = document.createElement('img')
-    imgCard.src = `assets/cartas/${card}.png`
-    imgCard.classList.add('cards')
+        do {
+            const card = orderCard()
+            computerPoints = accumulatePoints(pointsPlayers.length - 1, card)
+            createCard(card, pointsPlayers.length - 1)
+        } while (computerPoints < miniumPoints && miniumPoints <= 21);
 
-    divPlayerCards.append(imgCard)
+        determineWinner()
+    }
 
-    if(playerPoints > 21) {
+    // Evento, pedir carta
+    btnOrder.addEventListener('click', () => {
+        const card = orderCard()
+        const playerPoints = accumulatePoints(0, card)
+        createCard(card, 0)
+
+        if(playerPoints > 21) {
+            btnOrder.disabled = true
+            btnStop.disabled = true
+            computerShift(playerPoints)
+        }
+        if(playerPoints === 21) {
+            btnOrder.disabled = true
+            btnStop.disabled = true
+            computerShift(playerPoints)
+        }
+    })
+
+    // Evento, detener juego
+    btnStop.addEventListener('click', () => {
         btnOrder.disabled = true
         btnStop.disabled = true
-        computerShift(playerPoints)
-    }
-    if(playerPoints === 21) {
-        btnOrder.disabled = true
-        btnStop.disabled = true
-        computerShift(playerPoints)
-    }
-})
 
-// Evento, detener juego
-btnStop.addEventListener('click', () => {
-    btnOrder.disabled = true
-    btnStop.disabled = true
+        computerShift(pointsPlayers[0])
+    })
 
-    computerShift(playerPoints)
-})
+    // Evento, nuevo juego
+    // btnNew.addEventListener('click', () => {
+    //     initializeGame()
+    // })
 
-// Evento, nuevo juego
-btnNew.addEventListener('click', () => {
-    deck = []
-    deck = createDeck()
-
-    btnOrder.disabled = false
-    btnStop.disabled = false
-
-    playerPoints = 0
-    computerPoints = 0
-
-    pointsHTML[0].innerText = playerPoints
-    pointsHTML[1].innerText = computerPoints
-
-    divPlayerCards.innerHTML = ''
-    divComputerCards.innerHTML = ''
-})
+    return { newGame: initializeGame }
+})()
